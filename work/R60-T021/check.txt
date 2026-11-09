@@ -1,0 +1,48 @@
+====================================================
+  R60-T021: Keyboard Interaction Regression Tests   
+  Project: public/Planet_gesture_formation          
+====================================================
+
+Loading application at http://127.0.0.1:52000/index.html...
+
+[Test 1] Skip Link to Main 3D Scene
+  ✓ Skip link (#skipLink) element exists in DOM
+  ✓ Skip link is focused upon first Tab navigation
+  ✓ Skip link becomes visibly positioned on screen when focused
+  ✓ Activating skip link successfully moves focus to #scene
+
+[Test 2] #scene Canvas Keyboard Navigation & Controls
+  ✓ #scene has tabindex set for keyboard focus
+  ✓ Space key on #scene toggled gesture to "fist"
+  ✓ Key "3" on #scene set gesture to "thumbs_up"
+  ✓ Key "1" on #scene set gesture to "open"
+  ✓ Arrow keys (rotation and zoom) handle interaction without error
+
+[Test 3] #gestureIndicator Keyboard Focus & Cycling
+  ✓ #gestureIndicator can receive keyboard focus
+  ✓ #gestureIndicator has role="button" for accessibility
+  ✓ Enter key on #gestureIndicator cycled gesture from "open" to "fist"
+  ✓ Space key on #gestureIndicator cycled gesture from "fist" to "thumbs_up"
+
+[Test 4] #navbar Dropdowns Keyboard Accessibility
+  ✓ #cameraNavItem is focusable via keyboard
+  ✓ Pressing Enter on #cameraNavItem sets aria-expanded="true"
+  ✓ Space key toggles #trackingToggle checkbox inside dropdown
+  ✓ Pressing Enter on #instructionsNavItem opens instructions dropdown
+  ✓ Escape key closes all open navbar dropdowns
+
+[Test 5] Distinct :focus-visible Indicators Verification
+  ✓ #skipLink exhibits distinct visible focus indicator when focused
+  ✓ #scene exhibits distinct visible focus indicator when focused
+  ✓ #gestureIndicator exhibits distinct visible focus indicator when focused
+  ✓ #cameraNavItem exhibits distinct visible focus indicator when focused
+  ✓ #instructionsNavItem exhibits distinct visible focus indicator when focused
+
+[Test 6] Mobile Menu Keyboard Navigation
+  ✓ Enter key on #mobileMenuBtn opens mobile navigation menu
+  ✓ Mobile menu button updates aria-expanded="true"
+  ✓ Escape key closes mobile navigation menu
+
+====================================================
+  ALL TESTS PASSED SUCCESSFULLY!                    
+====================================================

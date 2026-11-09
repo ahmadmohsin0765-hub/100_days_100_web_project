@@ -35,10 +35,37 @@ An interactive, browser-based space visualization that renders a Saturn-like pla
 | ↕️ **Closer / Farther** | **Zoom In / Out** | Scales the camera viewport size based on hand distance from webcam. |
 | 👍 **Thumbs Up** | **Supernova Charge** | Accelerates particles to high velocities for a cosmic shockwave. |
 
-### ⌨️ Keyboard Shortcuts
+### ⌨️ Keyboard Shortcuts & Accessibility Controls
 
+- **Skip Link:** Press <kbd>Tab</kbd> on page load to reveal the visible skip link and press <kbd>Enter</kbd> to jump straight into the `#scene` canvas.
 - `T` — Toggle Hand Tracking (Enable/Disable Webcam feed)
 - `I` — Toggle Instructions Overlay
+- `Escape` — Close any active dropdowns or mobile navigation menus
+- **Scene Canvas Controls (`#scene`):**
+  - <kbd>Space</kbd> — Toggle between Idle Scatter (`open`) and Saturn Formation (`fist`)
+  - <kbd>Enter</kbd> — Trigger Supernova Charge (`thumbs_up`)
+  - <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> — Directly switch to Open Hand (`1`), Fist (`2`), or Thumbs Up (`3`)
+  - <kbd>←</kbd> / <kbd>→</kbd> — Rotate the planet left or right
+  - <kbd>↑</kbd> / <kbd>↓</kbd> — Zoom the camera in or out
+- **Gesture Badge (`#gestureIndicator`):** Focusable via <kbd>Tab</kbd>, press <kbd>Enter</kbd> or <kbd>Space</kbd> to cycle active simulated gestures.
+- **Navbar & Dropdowns:** Full keyboard navigation support using <kbd>Tab</kbd> to navigate, and <kbd>Enter</kbd> or <kbd>Space</kbd> to expand/collapse menus and toggle controls.
+
+---
+
+## 🧪 Automated Testing
+
+Automated Playwright regression test suite verifying keyboard accessibility, skip links, focus states, and interactive triggers:
+
+### Run Regression Test
+```bash
+node tests/course/r60-t021.mjs
+```
+
+### Save Test Execution Output
+```bash
+node tests/course/r60-t021.mjs > work/R60-T021/check.txt 2>&1
+cat work/R60-T021/check.txt
+```
 
 ---
 

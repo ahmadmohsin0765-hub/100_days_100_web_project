@@ -17,15 +17,25 @@
   </head>
   <body>
     <div id="app">
-      <canvas id="scene"></canvas>
+      <!-- Skip link to main 3D scene -->
+      <a href="#scene" class="skip-link" id="skipLink">Skip to main 3D scene</a>
 
-      <nav id="navbar">
+      <canvas id="scene" tabindex="0" role="region" aria-label="3D Saturn scene"></canvas>
+
+      <nav id="navbar" aria-label="Main Navigation">
         <div class="nav-brand">
           AEVAI SYSTEMS <span class="nav-subtitle">/ Saturn Physics</span>
         </div>
 
         <!-- Gesture status badge — always visible on desktop, shown in mobile panel too -->
-        <div id="gestureIndicator" class="nav-status">
+        <div
+          id="gestureIndicator"
+          class="nav-status"
+          tabindex="0"
+          role="button"
+          aria-label="Gesture status. Press Enter or Space to cycle gestures"
+          aria-live="polite"
+        >
           Status: <span id="gesture">—</span>
         </div>
 
@@ -50,7 +60,15 @@
             ✕
           </button>
 
-          <div class="nav-item" id="cameraNavItem">
+          <div
+            class="nav-item"
+            id="cameraNavItem"
+            tabindex="0"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label="Camera and Tracking menu"
+          >
             <span>Camera &amp; Tracking ▾</span>
             <div class="dropdown">
               <div class="preview">
@@ -72,7 +90,15 @@
             </div>
           </div>
 
-          <div id="instructionsNavItem" class="nav-item">
+          <div
+            id="instructionsNavItem"
+            class="nav-item"
+            tabindex="0"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label="Instructions menu"
+          >
             <span>Instructions ▾</span>
             <div
               id="instructionsDropdown"

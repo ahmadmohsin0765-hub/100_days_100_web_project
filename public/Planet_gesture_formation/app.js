@@ -333,6 +333,7 @@ let hand1 = {
   prevX: 0,
   prevY: 0,
   size: 0.15,
+  isManual: false,
 };
 
 let zoomFactor = 1.0;
@@ -341,7 +342,13 @@ let chargeTimer = 0;
 let mode = 'scatter';
 // rotation state
 
-function setGesture1(g) {
+function setGesture1(g, isManual = false) {
+  if (isManual) {
+    hand1.isManual = true;
+    hand1.confidence = 1;
+  } else if (g !== 'none') {
+    hand1.confidence = 1;
+  }
   if (hand1.gesture !== g) {
     // Explode if dropped ThumbsUp into Open
     if (
@@ -385,9 +392,8 @@ async function setupMediaPipe() {
     typeof window.Hands !== 'function' ||
     typeof window.Camera !== 'function'
   ) {
-    console.error('MediaPipe Hands or Camera failed to load.');
+    console.warn('MediaPipe Hands or Camera failed to load.');
     if (gestureLabel) gestureLabel.textContent = 'tracking unavailable';
-    trackingToggle.checked = false;
     return false;
   }
   try {
@@ -412,11 +418,10 @@ async function setupMediaPipe() {
     await cameraFeed.start();
     return true;
   } catch (error) {
-    console.error('Failed to initialize MediaPipe Hands.', error);
+    console.warn('Failed to initialize MediaPipe Hands.', error);
     hands = null;
     cameraFeed = null;
     if (gestureLabel) gestureLabel.textContent = 'tracking unavailable';
-    trackingToggle.checked = false;
     return false;
   }
 }
@@ -460,10 +465,12 @@ function classifyHand(landmarks) {
 
 function onResults(results) {
   if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+    if (hand1.isManual) return;
     hand1.confidence = 0;
     setGesture1('none');
     return;
   }
+  hand1.isManual = false;
 
   const lm1 = results.multiHandLandmarks[0];
   const c1 = landmarksToCentroid(lm1);
@@ -606,6 +613,79 @@ function loop(now) {
 requestAnimationFrame(loop);
 
 // --------------- UI & Controls ---------------
+const skipLink = document.getElementById('skipLink');
+const gestureIndicator = document.getElementById('gestureIndicator');
+const cameraNavItem = document.getElementById('cameraNavItem');
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const navMenu = document.getElementById('navMenu');
+const mobileOverlay = document.getElementById('mobileOverlay');
+const mobilePanelClose = document.getElementById('mobilePanelClose');
+
+// ── Skip Link to Main 3D Scene ──
+if (skipLink) {
+  skipLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    canvas.focus();
+  });
+  skipLink.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      canvas.focus();
+    }
+  });
+}
+
+// ── Scene Canvas Keyboard Controls ──
+if (canvas) {
+  canvas.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      userRotationSpeed -= 0.01;
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      userRotationSpeed += 0.01;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      zoomFactor = Math.min(zoomFactor * 1.08, 3.0);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      zoomFactor = Math.max(zoomFactor * 0.92, 0.4);
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      setGesture1(hand1.gesture === 'fist' ? 'open' : 'fist', true);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      setGesture1(hand1.gesture === 'thumbs_up' ? 'open' : 'thumbs_up', true);
+    } else if (e.key === '1') {
+      setGesture1('open', true);
+    } else if (e.key === '2') {
+      setGesture1('fist', true);
+    } else if (e.key === '3') {
+      setGesture1('thumbs_up', true);
+    }
+  });
+}
+
+// ── Interactive Gesture Status Indicator ──
+const GESTURE_CYCLE = ['open', 'fist', 'thumbs_up'];
+
+function cycleGesture() {
+  const currentIndex = GESTURE_CYCLE.indexOf(hand1.gesture);
+  const nextIndex = (currentIndex + 1) % GESTURE_CYCLE.length;
+  setGesture1(GESTURE_CYCLE[nextIndex], true);
+}
+
+if (gestureIndicator) {
+  gestureIndicator.addEventListener('click', cycleGesture);
+  gestureIndicator.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      cycleGesture();
+    }
+  });
+}
+
+// ── Tracking Checkbox ──
 trackingToggle.addEventListener('change', () => {
   if (trackingToggle.checked) {
     if (!hands) {
@@ -618,34 +698,65 @@ trackingToggle.addEventListener('change', () => {
   }
 });
 
-if (instructionsNavItem) {
-  instructionsNavItem.addEventListener('click', (e) => {
-    // On desktop: toggle active dropdown
-    // On mobile: handled by accordion (clicks inside panel are fine)
-    if (window.innerWidth > 768) {
-      if (e.target.closest('#instructionsDropdown')) return;
-      instructionsNavItem.classList.toggle('active');
+trackingToggle.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    trackingToggle.checked = !trackingToggle.checked;
+    trackingToggle.dispatchEvent(new Event('change'));
+  }
+});
+
+// ── Navigation Dropdowns & Keyboard Accessibility ──
+function closeAllDropdowns() {
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.classList.remove('active');
+    item.classList.remove('mobile-active');
+    item.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function toggleDropdown(item) {
+  const isCurrentlyOpen =
+    item.classList.contains('active') || item.classList.contains('mobile-active');
+  closeAllDropdowns();
+  if (!isCurrentlyOpen) {
+    item.classList.add('active');
+    item.classList.add('mobile-active');
+    item.setAttribute('aria-expanded', 'true');
+  }
+}
+
+function setupNavItem(item) {
+  if (!item) return;
+  item.addEventListener('click', (e) => {
+    if (e.target.closest('.dropdown')) return;
+    e.stopPropagation();
+    toggleDropdown(item);
+  });
+  item.addEventListener('keydown', (e) => {
+    if (
+      e.target === item ||
+      (e.target.parentElement === item && e.target.tagName === 'SPAN')
+    ) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleDropdown(item);
+      }
     }
   });
 }
 
-// Close instructions dropdown if clicked outside (desktop only)
+setupNavItem(cameraNavItem);
+setupNavItem(instructionsNavItem);
+
+// Close dropdowns if clicked outside
 window.addEventListener('click', (e) => {
-  if (
-    window.innerWidth > 768 &&
-    instructionsNavItem &&
-    !instructionsNavItem.contains(e.target)
-  ) {
-    instructionsNavItem.classList.remove('active');
+  if (!e.target.closest('.nav-item')) {
+    closeAllDropdowns();
   }
 });
 
 // --------------- Mobile Hamburger Menu ---------------
-const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-const navMenu = document.getElementById('navMenu');
-const mobileOverlay = document.getElementById('mobileOverlay');
-const mobilePanelClose = document.getElementById('mobilePanelClose');
-
 function openMobileMenu() {
   navMenu.classList.add('mobile-open');
   mobileMenuBtn.classList.add('open');
@@ -660,8 +771,7 @@ function closeMobileMenu() {
   mobileMenuBtn.setAttribute('aria-expanded', 'false');
   mobileOverlay.classList.remove('active');
   document.body.style.overflow = '';
-
-  mobileNavItems.forEach((item) => item.classList.remove('mobile-active'));
+  closeAllDropdowns();
 }
 
 if (mobileMenuBtn) {
@@ -671,10 +781,24 @@ if (mobileMenuBtn) {
       ? closeMobileMenu()
       : openMobileMenu();
   });
+  mobileMenuBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      navMenu.classList.contains('mobile-open')
+        ? closeMobileMenu()
+        : openMobileMenu();
+    }
+  });
 }
 
 if (mobilePanelClose) {
   mobilePanelClose.addEventListener('click', closeMobileMenu);
+  mobilePanelClose.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      closeMobileMenu();
+    }
+  });
 }
 
 if (mobileOverlay) {
@@ -686,18 +810,20 @@ window.addEventListener('resize', () => {
   if (window.innerWidth > 768) closeMobileMenu();
 });
 
+// Global Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 't') {
+  if (e.key.toLowerCase() === 't' && e.target !== trackingToggle) {
     trackingToggle.checked = !trackingToggle.checked;
     trackingToggle.dispatchEvent(new Event('change'));
   }
-  if (e.key.toLowerCase() === 'i') {
+  if (e.key.toLowerCase() === 'i' && !e.target.matches('input, textarea')) {
     if (instructionsNavItem) {
-      instructionsNavItem.classList.toggle('active');
+      toggleDropdown(instructionsNavItem);
     }
   }
   if (e.key === 'Escape') {
     closeMobileMenu();
+    closeAllDropdowns();
   }
 });
 
@@ -713,7 +839,6 @@ window.addEventListener('keydown', (e) => {
   if (trackingToggle.checked)
     setupMediaPipe().catch((err) => {
       console.warn('MediaPipe init failed', err);
-      trackingToggle.checked = false;
     });
 })();
 
@@ -726,23 +851,3 @@ window.__Aevai = {
     initStars();
   },
 };
-
-const mobileNavItems = document.querySelectorAll('.nav-item');
-
-mobileNavItems.forEach((item) => {
-  const header = item.querySelector('span');
-
-  header.addEventListener('click', (e) => {
-    if (window.innerWidth > 768) return;
-
-    e.stopPropagation();
-
-    mobileNavItems.forEach((navItem) => {
-      if (navItem !== item) {
-        navItem.classList.remove('mobile-active');
-      }
-    });
-
-    item.classList.toggle('mobile-active');
-  });
-});
